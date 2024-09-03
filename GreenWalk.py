@@ -5,10 +5,12 @@ import time
 import schedule
 import threading
 
-bot = telebot.TeleBot('7032527504:AAGRHD975AiIUB8xBzGNWmd3DmVdGrcWPGo')
+bot = telebot.TeleBot('7432241250:AAEEFEuUbSBBmxDP_PypHkZAWzxOIpQs6Yk')  # test bot
+# bot = telebot.TeleBot('7032527504:AAGRHD975AiIUB8xBzGNWmd3DmVdGrcWPGo')  # main bot
 
 KeId = 565692562
 VeId = 1196997008
+# VeId = 1386906994    #test
 
 data_file = 'walk_data.json'
 
@@ -33,7 +35,7 @@ data = load_data()
 KeWalkCount = data['KeWalkCount']
 VeWalkCount = data['VeWalkCount']
 
-user_chats = {KeId: None, VeId: None}
+user_chats = {KeId: 565692562, VeId: 1196997008}
 
 
 @bot.message_handler(commands=['start'])
@@ -58,23 +60,23 @@ def send_main_menu(chat_id):
 
 @bot.message_handler(commands=['dolg'])
 def send_dolg(message):
-    Dolg = KeWalkCount - VeWalkCount
-    if Dolg < 0:
-        DolgKirilla = -Dolg
-        bot.send_message(message.from_user.id, f'Долг Кирилла: {DolgKirilla}')
-    elif Dolg > 0:
-        DolgVadima = Dolg
-        bot.send_message(message.from_user.id, f'Долг Вадима: {DolgVadima}')
+    dolg = KeWalkCount - VeWalkCount
+    if dolg < 0:
+        dolg_kirilla = -dolg
+        bot.send_message(message.from_user.id, f'Долг Кирилла: {dolg_kirilla}')
+    elif dolg >= 0:
+        dolg_vadima = dolg
+        bot.send_message(message.from_user.id, f'Долг Вадима: {dolg_vadima}')
     else:
         bot.send_message(message.from_user.id, 'Нет долгов!')
 
 
 @bot.message_handler(commands=['queue'])
 def send_queue(message):
-    Dolg = KeWalkCount - VeWalkCount
-    if Dolg < 0:
+    dolg = KeWalkCount - VeWalkCount
+    if dolg < 0:
         bot.send_message(message.from_user.id, 'Очередь Кирилла!')
-    elif Dolg > 0:
+    elif dolg > 0:
         bot.send_message(message.from_user.id, 'Очередь Вадима!')
     else:
         bot.send_message(message.from_user.id, 'Очередь еще не началась!')
@@ -155,16 +157,15 @@ def handle_walk_response(message):
                     bot.send_message(user_chats[KeId], "Вадим погулял с собакой!")
                 bot.send_message(user_chats[VeId], "Молодец!")
 
-            Dolg = KeWalkCount - VeWalkCount
-            if Dolg == 0:
+            dolg = KeWalkCount - VeWalkCount
+            if dolg == 0:  # Проверка если долг = 1 или -1
                 if message.from_user.id == KeId:
-                    VeWalkCount += 1
-                    bot.send_message(user_chats[KeId], "Теперь очередь Вадима!")
-                    bot.send_message(user_chats[VeId], "Теперь твоя очередь!")
+                    KeWalkCount += 1  # Долг переходит Вадиму
+                    bot.send_message(user_chats[VeId], "Теперь твоя очередь, Вадим!")
                 elif message.from_user.id == VeId:
-                    KeWalkCount += 1
-                    bot.send_message(user_chats[VeId], "Теперь очередь Кирилла!")
-                    bot.send_message(user_chats[KeId], "Теперь твоя очередь!")
+                    VeWalkCount += 1  # Долг переходит Кириллу
+                    bot.send_message(user_chats[KeId], "Теперь твоя очередь, Кирилл!")
+
             save_data({'KeWalkCount': KeWalkCount, 'VeWalkCount': VeWalkCount})
             send_main_menu(message.chat.id)
         elif message.text == 'Нет':
@@ -175,21 +176,15 @@ def handle_walk_response(message):
 
 
 def send_daily_reminder():
-    Dolg = KeWalkCount - VeWalkCount
-    if Dolg < 0:
-        bot.send_message(user_chats[KeId], "Не забудь что сегодня твоя очередь гулять с собакой!!!")
-    elif Dolg > 0:
+    dolg = KeWalkCount - VeWalkCount
+    if dolg < 0:
         bot.send_message(user_chats[VeId], "Не забудь что сегодня твоя очередь гулять с собакой!!!")
-    else:
-        # In case there's no debt, we can send a general reminder
-        if user_chats[KeId]:
-            bot.send_message(user_chats[KeId], "Не забудь что сегодня твоя очередь гулять с собакой!!!")
-        if user_chats[VeId]:
-            bot.send_message(user_chats[VeId], "Не забудь что сегодня твоя очередь гулять с собакой!!!")
+    elif dolg > 0:
+        bot.send_message(user_chats[KeId], "Не забудь что сегодня твоя очередь гулять с собакой!!!")
 
 
 def schedule_daily_reminders():
-    schedule.every().day.at("19:00").do(send_daily_reminder)
+    schedule.every().day.at("15:00").do(send_daily_reminder)
     while True:
         schedule.run_pending()
         time.sleep(1)
